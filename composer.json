@@ -31,5 +31,16 @@
     }
   },
   "minimum-stability": "stable",
-  "prefer-stable": true
+  "prefer-stable": true,
+  "config": {
+    "allow-plugins": {
+      "pestphp/pest-plugin": true
+    }
+  },
+  "repositories": {
+    "activity-logger": {
+      "type": "vcs",
+      "url": "git@github.com:kazitoha/laravel-activity-logger.git"
+    }
+  }
 }
