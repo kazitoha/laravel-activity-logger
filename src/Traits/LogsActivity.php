@@ -4,46 +4,74 @@ namespace Kazitoha\ActivityLogger\Traits;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Request;
 use Kazitoha\ActivityLogger\Models\ActivityLog;
 
 trait LogsActivity
 {
     public static function bootLogsActivity(): void
     {
-        static::created(fn ($model) => self::logAction('created', $model));
-        static::updating(fn ($model) => self::logAction('updated', $model));
-        static::deleting(fn ($model) => self::logAction('deleted', $model));
+        static::created(function (Model $model) {
+            self::logAction('created', $model);
+        });
+
+        // Use "updating" (pre-save) to capture old/new values accurately
+        static::updating(function (Model $model) {
+            self::logAction('updated', $model);
+        });
+
+        static::deleting(function (Model $model) {
+            self::logAction('deleted', $model);
+        });
     }
 
     protected static function logAction(string $action, Model $model): void
     {
-        $original = $model->getOriginal();
-        $changes  = $model->getDirty();
-
-        $old = $new = [];
-
-        foreach ($changes as $key => $newValue) {
-            $old[$key] = $original[$key] ?? null;
-            $new[$key] = $newValue;
+        // Skip if model is not persisted for non-create actions
+        if (!in_array($action, ['created']) && !$model->exists) {
+            return;
         }
 
-        $payload = ($action === 'deleted')
-            ? ['old' => $original]
-            : ['attributes' => $new, 'old' => $old];
+        $original   = $model->getOriginal();
+        $attributes = $model->getAttributes();
+        $changes    = $model->getDirty();
+
+        $payload = [];
+
+        if ($action === 'created') {
+            $payload = ['attributes' => self::withoutHidden($model, $attributes)];
+        } elseif ($action === 'updated') {
+            $old = $new = [];
+            foreach ($changes as $key => $newValue) {
+                $old[$key] = $original[$key] ?? null;
+                $new[$key] = $newValue;
+            }
+            $payload = ['attributes' => $new, 'old' => $old];
+        } else { // deleted
+            $payload = ['old' => self::withoutHidden($model, $original)];
+        }
 
         $payload = self::redact($payload);
 
         ActivityLog::create([
             'user_id'       => Auth::id(),
             'action'        => $action,
-            'description'   => json_encode($payload),
+            'description'   => $payload,
             'loggable_type' => $model->getMorphClass(),
             'loggable_id'   => $model->getKey(),
-            'ip_address'    => Request::ip(),
+            'ip_address'    => request()->ip(),
         ]);
     }
 
+    protected static function withoutHidden(Model $model, array $data): array
+    {
+        $hidden = method_exists($model, 'getHidden') ? $model->getHidden() : [];
+        foreach ($hidden as $key) {
+            unset($data[$key]);
+        }
+        return $data;
+    }
+
+    /** Redact sensitive keys recursively. */
     protected static function redact(array $data): array
     {
         $keys = array_map('strtolower', config('activity-logger.redact_keys', []));

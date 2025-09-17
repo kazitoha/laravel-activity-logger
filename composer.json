@@ -1,18 +1,12 @@
 {
   "name": "kazitoha/laravel-activity-logger",
-  "description": "A simple, framework-friendly activity logging package for Laravel 10/11/12 with a reusable LogsActivity trait, model, and migration.",
+  "description": "Activity logging for Laravel models via a simple trait. Logs create/update/delete with old/new values.",
   "type": "library",
   "license": "MIT",
-  "require": {
-    "php": "^8.1|^8.2|^8.3",
-    "illuminate/support": "^10.0|^11.0|^12.0",
-    "illuminate/database": "^10.0|^11.0|^12.0"
-  },
-  "require-dev": {
-    "orchestra/testbench": "^8.0|^9.0|^10.0",
-    "pestphp/pest": "^3.0",
-    "pestphp/pest-plugin-laravel": "^3.0"
-  },
+  "keywords": ["laravel", "activity", "audit", "log", "logger"],
+  "authors": [
+    { "name": "kazitoha" }
+  ],
   "autoload": {
     "psr-4": {
       "Kazitoha\\ActivityLogger\\": "src/"
@@ -30,17 +24,16 @@
       ]
     }
   },
-  "minimum-stability": "stable",
-  "prefer-stable": true,
-  "config": {
-    "allow-plugins": {
-      "pestphp/pest-plugin": true
-    }
+  "require": {
+    "php": "^8.1",
+    "illuminate/support": "^10.0|^11.0",
+    "illuminate/database": "^10.0|^11.0"
   },
-  "repositories": {
-    "activity-logger": {
-      "type": "vcs",
-      "url": "git@github.com:kazitoha/laravel-activity-logger.git"
-    }
-  }
+  "require-dev": {
+    "orchestra/testbench": "^8.0|^9.0",
+    "pestphp/pest": "^3.0",
+    "phpunit/phpunit": "^10.5"
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
 }
